@@ -1,0 +1,153 @@
+<html>
+  <head>
+    <title>Weather Map</title>
+    <meta name="viewport" content="initial-scale=1.0" />
+    <meta charset="utf-8" />
+    <style>
+      #map {
+        height: 100%;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <script>
+      function locate() {
+        navigator.geolocation.getCurrentPosition(initialize, fail, {
+          time: 3000,
+        });
+      }
+      function initialize(position) {
+        position = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        var map = L.map("map").setView(position, 10);
+        L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+          maxZoom: 18,
+        }).addTo(map);
+
+        var userMarker = L.marker(position).addTo(map);
+
+        getWeather(position);
+        map.on("click", function (event) {
+          createMarker(event.latlng);
+          // getWeather([evt.latlng.lat, evt.latlng.lng]);
+        });
+        function createMarker(location) {
+          if (userMarker == undefined) {
+            userMarker = L.marker(location).addTo(map);
+            getWeather(location);
+          } else {
+            userMarker.setLatLng(location);
+            getWeather(location);
+          }
+        }
+        async function getTimeZone(location) {
+          var timeZone = undefined,
+            key = "UJ51XQSP5U1A",
+            url = `https://api.timezonedb.com/v2.1/get-time-zone?key=${key}&format=json&by=position&lat=${location.lat}&lng=${location.lng}`;
+          await fetch(url)
+            .then(function (response) {
+              return response.json();
+            })
+            .then(function (data) {
+              if (data.status == "OK") {
+                //console.log(data);
+                timeZone = data.zoneName;
+              } else timeZone = "404";
+            });
+          return timeZone;
+        }
+
+        function getWeather(location) {
+          key = "449de63838b85f03e45a2616932ed63c";
+          url = `https://api.openweathermap.org/data/2.5/weather?lat=${location.lat}&lon=${location.lng}&units=metric&appid=${key}`;
+          fetch(url)
+            .then(function (response) {
+              return response.json();
+            })
+            .then(async function (data) {
+              var timeZone = await getTimeZone(location);
+
+              var dateString = "",
+                dateObj = null,
+                zoneFailure = "";
+
+              if (timeZone == "404") {
+                //Failed to identify the zone of the marker, then set to the default ( Browser Time Zone)
+                dateObj = new Date().toLocaleString("en-US");
+                zoneFailure = " Error_CHKLOG";
+                console.log(
+                  "Zone Identification failed, rendering browser local time"
+                );
+              } else {
+                dateObj = new Date().toLocaleString("en-US", {
+                  timeZone: timeZone,
+                });
+              }
+              //For parsing date into month, day, year, reconstruct date obj
+              //Note : Here the time zone date will be kept but that will be treated as the browser time for the instance
+              dateObj = new Date(dateObj);
+              var month = dateObj.getUTCMonth() + 1, //months from 1-12
+                day = dateObj.getUTCDate(),
+                year = dateObj.getUTCFullYear(),
+                hours = dateObj.getHours(),
+                minutes = dateObj.getMinutes();
+              if (hours < 12) {
+                minutes = minutes + " AM";
+              } else {
+                hours = hours - 12;
+                minutes = minutes + " PM";
+              }
+              // changing accrdng to needs
+              dateString =
+                day + "/" + month + "/" + year + " " + hours + ":" + minutes;
+
+              infoMessage = `
+                            <div styles={'font-weight':200}>
+                                Date & Time : ${
+                                  dateString + zoneFailure
+                                } <br/> <hr>
+                                City Name : <b>${
+                                  data.name != "" ? data.name : "Unknown"
+                                }</b> <br/><hr>
+                                Weather : <b>${data.weather[0].main}</b><br/>
+                                Temperature : ${data.main.temp} &#176 C <br/>
+                                Humidity : ${data.main.humidity} &#176 C <br/>
+                            </div>
+                            `;
+              //'CityName: '+data.name +'<br/> Weather: '+data.weather[0].main+'<br/> Weather Description: '+data.weather[0].description;
+              userMarker.bindPopup(infoMessage).openPopup();
+            });
+        }
+      }
+      function fail() {
+        alert(
+          "navigator.geolocation failed, may not be supported, setting default location"
+        );
+        initialize({ coords: { latitude: 17.4468019, longitude: 78.3102378 } });
+      }
+    </script>
+  </head>
+  <body onload="locate()">
+    <div id="map"></div>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+      integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+      integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+      crossorigin=""
+    ></script>
+  </body>
+</html>
