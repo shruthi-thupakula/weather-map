@@ -6,13 +6,7 @@
 - Leaflet JS
 - Open Weather API
 
-### This applicaiton doesn't depend on any backend except the APIs used
-
----
-
-The Application may show you "For Development Purpose Only Water Mark" which was the result of API Usage of Open Maps & Leaflet JS
-
----
+### This application doesn't depend on any backend except the APIs used
 
 > It uses the live location of the user with the help of `navigator.geolocation()` class available in JavaScript
 
@@ -24,6 +18,6 @@ The Application may show you "For Development Purpose Only Water Mark" which was
 Date & Time : 30/1/2019 5:15 PM
 City Name : Serilingampalle
 Weather : Clear
-Temaprature : 25 ° C
+Temprature : 25 ° C
 Humidity : 23 ° C
 ```
